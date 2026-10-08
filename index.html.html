@@ -4,273 +4,153 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gestión de Rifa - 1,250 Boletos</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
   <style>
     :root {
-      --bg-color: #f8f9fa;
-      --card-bg: #ffffff;
+      --primary: #0d6efd;
+      --success: #198754;
+      --warning: #ffc107;
+      --danger: #dc3545;
+      --bg: #f8f9fa;
     }
-    body {
-      background-color: var(--bg-color);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    .ticket-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-      gap: 10px;
-      max-height: 550px;
-      overflow-y: auto;
-      padding: 10px;
-    }
-    .ticket-card {
-      border: 2px solid #dee2e6;
-      border-radius: 8px;
-      padding: 8px;
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      background-color: #fff;
-      position: relative;
-    }
-    .ticket-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-    }
-    .ticket-card.free { border-color: #198754; background-color: #f8fff9; }
-    .ticket-card.reserved { border-color: #ffc107; background-color: #fffdf0; }
-    .ticket-card.paid { border-color: #dc3545; background-color: #fff8f8; }
-    .ticket-card.selected {
-      border-color: #0d6efd !important;
-      background-color: #e7f1ff !important;
-      box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.4);
-    }
-    .ticket-card .badge-check {
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      display: none;
-    }
-    .ticket-card.selected .badge-check {
-      display: block;
-    }
-    .number-tag {
-      font-size: 0.75rem;
-      background: #e9ecef;
-      border-radius: 4px;
-      padding: 1px 4px;
-      margin: 1px;
-      display: inline-block;
-    }
-    .status-badge {
-      font-size: 0.7rem;
-    }
-    .bulk-bar {
-      position: sticky;
-      bottom: 20px;
-      z-index: 1000;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.2);
-    }
+    * { box-sizing: border-box; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); margin: 0; padding: 15px; color: #212529; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .stat-card { background: #fff; padding: 12px; border-radius: 8px; text-align: center; border: 1px solid #ccc; }
+    .stat-card h3 { margin: 5px 0 0 0; font-size: 1.5rem; }
+    .controls { background: #fff; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ccc; display: flex; gap: 10px; flex-wrap: wrap; }
+    .controls input, .controls select, .controls button { padding: 8px 12px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.95rem; }
+    .controls input { flex: 1; min-width: 200px; }
+    .btn { cursor: pointer; border: none; font-weight: bold; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .ticket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; max-height: 500px; overflow-y: auto; background: #fff; padding: 10px; border-radius: 8px; border: 1px solid #ccc; }
+    .ticket-card { border: 2px solid #dee2e6; border-radius: 6px; padding: 8px; text-align: center; cursor: pointer; background: #fff; user-select: none; }
+    .ticket-card.free { border-color: var(--success); background: #f8fff9; }
+    .ticket-card.reserved { border-color: var(--warning); background: #fffdf0; }
+    .ticket-card.paid { border-color: var(--danger); background: #fff8f8; }
+    .ticket-card.selected { border-color: var(--primary) !important; background: #e7f1ff !important; box-shadow: 0 0 0 2px var(--primary); }
+    .number-tag { font-size: 0.7rem; background: #e9ecef; border-radius: 3px; padding: 1px 3px; margin: 1px; display: inline-block; }
+    .bulk-bar { position: fixed; bottom: 15px; left: 50%; transform: translateX(-50%); background: #212529; color: white; padding: 12px 20px; border-radius: 30px; display: flex; gap: 15px; align-items: center; box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 1000; }
+    .hidden { display: none !important; }
+    .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 2000; }
+    .modal-content { background: white; padding: 20px; border-radius: 8px; width: 90%; max-width: 400px; }
+    .modal-content input, .modal-content select { width: 100%; margin-bottom: 10px; padding: 8px; }
   </style>
 </head>
 <body>
 
-<div class="container py-4">
-  <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2><i class="bi bi-ticket-perforated text-primary"></i> Control de Rifa (1,250 Boletos)</h2>
+<div class="container">
+  <div class="header">
+    <h2>Control de Rifa (1,250 Boletos)</h2>
     <div>
-      <button class="btn btn-outline-danger btn-sm" onclick="resetData()"><i class="bi bi-trash"></i> Reiniciar Datos</button>
+      <button class="btn btn-secondary" onclick="forceGenerate()">⚡ Cargar/Reiniciar Boletos</button>
+      <button class="btn btn-danger" onclick="resetData()">🗑️ Borrar Datos</button>
     </div>
   </div>
 
-  <!-- RESUMEN DE VENTAS -->
-  <div class="row g-3 mb-4">
-    <div class="col-6 col-md-3">
-      <div class="card text-center border-success">
-        <div class="card-body py-2">
-          <small class="text-muted">Disponibles</small>
-          <h4 id="statFree" class="text-success m-0">1250</h4>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="card text-center border-warning">
-        <div class="card-body py-2">
-          <small class="text-muted">Apartados</small>
-          <h4 id="statReserved" class="text-warning m-0">0</h4>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="card text-center border-danger">
-        <div class="card-body py-2">
-          <small class="text-muted">Pagados</small>
-          <h4 id="statPaid" class="text-danger m-0">0</h4>
-        </div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3">
-      <div class="card text-center border-primary">
-        <div class="card-body py-2">
-          <small class="text-muted">Seleccionados</small>
-          <h4 id="statSelected" class="text-primary m-0">0</h4>
-        </div>
-      </div>
-    </div>
+  <div class="stats-grid">
+    <div class="stat-card" style="border-color: var(--success);"><small>Disponibles</small><h3 id="statFree">0</h3></div>
+    <div class="stat-card" style="border-color: var(--warning);"><small>Apartados</small><h3 id="statReserved">0</h3></div>
+    <div class="stat-card" style="border-color: var(--danger);"><small>Pagados</small><h3 id="statPaid">0</h3></div>
+    <div class="stat-card" style="border-color: var(--primary);"><small>Seleccionados</small><h3 id="statSelected">0</h3></div>
   </div>
 
-  <!-- PANELES Y BUSCADOR -->
-  <div class="card mb-4">
-    <div class="card-body">
-      <div class="row g-2 align-items-center mb-3">
-        <div class="col-md-5">
-          <div class="input-group">
-            <span class="input-group-text"><i class="bi bi-search"></i></span>
-            <input type="text" id="searchInput" class="form-control" placeholder="Buscar por # Boleto, Comprador o Oportunidad (0000-9999)...">
-          </div>
-        </div>
-        <div class="col-md-4">
-          <select id="filterStatus" class="form-select" onchange="renderGrid()">
-            <option value="all">Todos los estados</option>
-            <option value="free">Solo Disponibles</option>
-            <option value="reserved">Solo Apartados</option>
-            <option value="paid">Solo Pagados</option>
-          </select>
-        </div>
-        <div class="col-md-3 text-end">
-          <button class="btn btn-primary w-100" data-bs-toggle="modal" data-bs-target="#sorteoModal">
-            <i class="bi bi-trophy"></i> Realizar Sorteo
-          </button>
-        </div>
-      </div>
+  <div class="controls">
+    <input type="text" id="searchInput" placeholder="Buscar # Boleto, Comprador o Oportunidad (0000-9999)..." oninput="renderGrid()">
+    <select id="filterStatus" onchange="renderGrid()">
+      <option value="all">Todos los estados</option>
+      <option value="free">Solo Disponibles</option>
+      <option value="reserved">Solo Apartados</option>
+      <option value="paid">Solo Pagados</option>
+    </select>
+    <button class="btn btn-primary" onclick="selectAllVisible()">Seleccionar Visibles</button>
+    <button class="btn btn-secondary" onclick="clearSelection()">Limpiar Selección</button>
+    <button class="btn btn-primary" style="background:#6f42c1;" onclick="openSorteoModal()">🏆 Sorteo</button>
+  </div>
 
-      <!-- BOTONES DE SELECCIÓN MÚLTIPLE -->
-      <div class="d-flex gap-2 mb-2">
-        <button class="btn btn-outline-secondary btn-sm" onclick="selectAllVisible()">
-          <i class="bi bi-check-all"></i> Seleccionar visibles
-        </button>
-        <button class="btn btn-outline-secondary btn-sm" onclick="clearSelection()">
-          <i class="bi bi-x-circle"></i> Limpiar selección
-        </button>
-        <span class="text-muted align-self-center ms-auto small">
-          <i class="bi bi-info-circle"></i> Mantén presionado o haz clic en varios boletos para seleccionarlos.
-        </span>
-      </div>
+  <div class="ticket-grid" id="ticketGrid">Cargando boletos...</div>
+</div>
 
-      <!-- REJILLA DE BOLETOS -->
-      <div class="ticket-grid" id="ticketGrid"></div>
+<div id="bulkBar" class="bulk-bar hidden">
+  <span id="selectedCountText">0 seleccionados</span>
+  <button class="btn btn-primary" onclick="openBulkModal()">Asignar Comprador</button>
+  <button class="btn btn-secondary" onclick="clearSelection()">Cancelar</button>
+</div>
+
+<div id="ticketModal" class="modal hidden">
+  <div class="modal-content">
+    <h3 id="modalTitle">Asignar Datos</h3>
+    <p id="modalSubtext" style="font-size:0.8rem; color:#6c757d;"></p>
+    <label>Nombre del Comprador:</label>
+    <input type="text" id="buyerName" placeholder="Ej. Juan Pérez">
+    <label>Teléfono / WhatsApp:</label>
+    <input type="text" id="buyerPhone" placeholder="Ej. 5512345678">
+    <label>Estado del Boleto:</label>
+    <select id="ticketStatus">
+      <option value="reserved">Apartado</option>
+      <option value="paid">Pagado</option>
+      <option value="free">Disponible (Liberar)</option>
+    </select>
+    <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+      <button class="btn btn-secondary" onclick="closeModal('ticketModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveTicketData()">Guardar</button>
     </div>
   </div>
 </div>
 
-<!-- BARRA FLOTANTE DE EDICIÓN EN LOTE -->
-<div id="bulkBar" class="bulk-bar bg-dark text-white p-3 rounded-4 container d-none">
-  <div class="d-flex justify-content-between align-items-center">
-    <div>
-      <i class="bi bi-check2-square text-primary fs-5 me-2"></i>
-      <strong id="selectedCountText">0 boletos seleccionados</strong>
-    </div>
-    <div class="d-flex gap-2">
-      <button class="btn btn-light btn-sm" onclick="clearSelection()">Cancelar</button>
-      <button class="btn btn-primary btn-sm" onclick="openBulkModal()">
-        <i class="bi bi-pencil-square"></i> Asignar Comprador
-      </button>
-    </div>
+<div id="sorteoModal" class="modal hidden">
+  <div class="modal-content" style="text-align:center;">
+    <h3>🏆 Realizar Sorteo</h3>
+    <p>Ingresa el número ganador de 4 dígitos (0000-9999):</p>
+    <input type="text" id="winningNumberInput" maxlength="4" placeholder="0000" style="font-size:1.5rem; text-align:center;">
+    <button class="btn btn-primary" onclick="evaluateWinner()" style="width:100%; margin-top:10px;">Buscar Ganador</button>
+    <div id="winnerResult" style="margin-top:15px;"></div>
+    <button class="btn btn-secondary" onclick="closeModal('sorteoModal')" style="margin-top:10px;">Cerrar</button>
   </div>
 </div>
 
-<!-- MODAL DE ASIGNACIÓN (INDIVIDUAL / LOTE) -->
-<div class="modal fade" id="ticketModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="modalTitle">Asignar Datos de Comprador</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p id="modalSubtext" class="text-muted small"></p>
-        <form id="ticketForm">
-          <div class="mb-3">
-            <label class="form-label">Nombre del Comprador</label>
-            <input type="text" id="buyerName" class="form-control" placeholder="Ej. Juan Pérez" required>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Teléfono / WhatsApp</label>
-            <input type="text" id="buyerPhone" class="form-control" placeholder="Ej. 5512345678">
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Estado del Boleto</label>
-            <select id="ticketStatus" class="form-select">
-              <option value="reserved">Apartado</option>
-              <option value="paid">Pagado</option>
-              <option value="free">Disponible (Liberar)</option>
-            </select>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" onclick="saveTicketData()">Guardar Cambios</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL DE SORTEO -->
-<div class="modal fade" id="sorteoModal" tabindex="-1">
-  <div class="modal-dialog">
-    <div class="modal-content text-center py-3">
-      <div class="modal-header border-0">
-        <h5 class="modal-title w-100"><i class="bi bi-trophy text-warning"></i> Sorteo de Ganadores</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body">
-        <p class="text-muted">Introduce el número ganador de 4 dígitos (0000-9999):</p>
-        <div class="d-flex justify-content-center gap-2 mb-3">
-          <input type="text" id="winningNumberInput" class="form-control form-control-lg text-center fw-bold" style="max-width: 200px; font-size: 1.8rem;" maxlength="4" placeholder="0000">
-        </div>
-        <button class="btn btn-warning btn-lg mb-3" onclick="evaluateWinner()"><i class="bi bi-search"></i> Buscar Ganador</button>
-        <div id="winnerResult" class="mt-3"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
   const TOTAL_TICKETS = 1250;
   let tickets = {};
   let selectedTickets = new Set();
-  let currentEditingMode = 'single'; // 'single' o 'bulk'
-  let currentSingleTicketId = null;
 
-  // Inicializar o Cargar Datos
-  function initData() {
-    const saved = localStorage.getItem('rifa_1250_data');
-    if (saved) {
-      tickets = JSON.parse(saved);
-    } else {
-      for (let i = 1; i <= TOTAL_TICKETS; i++) {
-        const opportunities = [];
-        for (let j = 0; j < 8; j++) {
-          let num = (i - 1) + (j * TOTAL_TICKETS);
-          opportunities.push(num.toString().padStart(4, '0'));
-        }
-        tickets[i] = {
-          id: i,
-          status: 'free',
-          buyer: '',
-          phone: '',
-          numbers: opportunities
-        };
+  function forceGenerate() {
+    tickets = {};
+    for (let i = 1; i <= TOTAL_TICKETS; i++) {
+      const opps = [];
+      for (let j = 0; j < 8; j++) {
+        let num = (i - 1) + (j * TOTAL_TICKETS);
+        opps.push(num.toString().padStart(4, '0'));
       }
-      saveToStorage();
+      tickets[i] = { id: i, status: 'free', buyer: '', phone: '', numbers: opps };
+    }
+    saveToStorage();
+    renderGrid();
+  }
+
+  function initData() {
+    try {
+      const saved = localStorage.getItem('rifa_1250_data_v2');
+      if (saved) {
+        tickets = JSON.parse(saved);
+      } else {
+        forceGenerate();
+        return;
+      }
+    } catch (e) {
+      forceGenerate();
+      return;
     }
     renderGrid();
   }
 
   function saveToStorage() {
-    localStorage.setItem('rifa_1250_data', JSON.stringify(tickets));
+    try {
+      localStorage.setItem('rifa_1250_data_v2', JSON.stringify(tickets));
+    } catch(e) {}
     updateStats();
   }
 
@@ -286,13 +166,12 @@
     document.getElementById('statPaid').innerText = paid;
     document.getElementById('statSelected').innerText = selectedTickets.size;
 
-    // Mostrar/Ocultar barra flotante de selección múltiple
     const bulkBar = document.getElementById('bulkBar');
     if (selectedTickets.size > 0) {
-      bulkBar.classList.remove('d-none');
+      bulkBar.classList.remove('hidden');
       document.getElementById('selectedCountText').innerText = `${selectedTickets.size} boletos seleccionados`;
     } else {
-      bulkBar.classList.add('d-none');
+      bulkBar.classList.add('hidden');
     }
   }
 
@@ -302,36 +181,34 @@
     const filterStatus = document.getElementById('filterStatus').value;
     grid.innerHTML = '';
 
-    Object.values(tickets).forEach(t => {
-      // Filtrado
+    const list = Object.values(tickets);
+    if (list.length === 0) {
+      grid.innerHTML = '<div>No hay boletos cargados. Haz clic en el botón superior "⚡ Cargar/Reiniciar Boletos".</div>';
+      return;
+    }
+
+    list.forEach(t => {
       if (filterStatus !== 'all' && t.status !== filterStatus) return;
 
-      const matchesSearch = search === '' ||
+      const matches = search === '' ||
         t.id.toString().includes(search) ||
         t.buyer.toLowerCase().includes(search) ||
         t.numbers.some(n => n.includes(search));
 
-      if (!matchesSearch) return;
+      if (!matches) return;
 
-      const isSelected = selectedTickets.has(t.id);
+      const isSel = selectedTickets.has(t.id);
       const card = document.createElement('div');
-      card.className = `ticket-card ${t.status} ${isSelected ? 'selected' : ''}`;
+      card.className = `ticket-card ${t.status} ${isSel ? 'selected' : ''}`;
       card.onclick = () => toggleSelectTicket(t.id);
 
-      let statusBadge = '';
-      if (t.status === 'free') statusBadge = '<span class="badge bg-success status-badge">Disponible</span>';
-      else if (t.status === 'reserved') statusBadge = '<span class="badge bg-warning text-dark status-badge">Apartado</span>';
-      else if (t.status === 'paid') statusBadge = '<span class="badge bg-danger status-badge">Pagado</span>';
+      let statusLabel = t.status === 'free' ? 'Disponible' : (t.status === 'reserved' ? 'Apartado' : 'Pagado');
 
       card.innerHTML = `
-        <i class="bi bi-check-circle-fill text-primary badge-check"></i>
-        <div class="fw-bold fs-6">Boleto #${t.id}</div>
-        <div>${statusBadge}</div>
-        <small class="text-truncate d-block fw-semibold mt-1">${t.buyer || '---'}</small>
-        <div class="mt-1">
-          <span class="number-tag">${t.numbers[0]}</span>
-          <span class="number-tag">+7 más</span>
-        </div>
+        <strong>#${t.id}</strong><br>
+        <small style="font-size:0.7rem;">${statusLabel}</small><br>
+        <small style="display:block; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${t.buyer || '---'}</small>
+        <div><span class="number-tag">${t.numbers[0]}</span> <span class="number-tag">+7</span></div>
       `;
       grid.appendChild(card);
     });
@@ -339,11 +216,8 @@
   }
 
   function toggleSelectTicket(id) {
-    if (selectedTickets.has(id)) {
-      selectedTickets.delete(id);
-    } else {
-      selectedTickets.add(id);
-    }
+    if (selectedTickets.has(id)) selectedTickets.delete(id);
+    else selectedTickets.add(id);
     renderGrid();
   }
 
@@ -353,13 +227,11 @@
 
     Object.values(tickets).forEach(t => {
       if (filterStatus !== 'all' && t.status !== filterStatus) return;
-      const matchesSearch = search === '' ||
+      const matches = search === '' ||
         t.id.toString().includes(search) ||
         t.buyer.toLowerCase().includes(search) ||
         t.numbers.some(n => n.includes(search));
-      if (matchesSearch) {
-        selectedTickets.add(t.id);
-      }
+      if (matches) selectedTickets.add(t.id);
     });
     renderGrid();
   }
@@ -371,16 +243,16 @@
 
   function openBulkModal() {
     if (selectedTickets.size === 0) return;
-    currentEditingMode = 'bulk';
-    document.getElementById('modalTitle').innerText = `Editar ${selectedTickets.size} Boletos Seleccionados`;
-    document.getElementById('modalSubtext').innerText = `Los datos ingresados se aplicarán a los boletos: ${Array.from(selectedTickets).slice(0, 10).join(', ')}${selectedTickets.size > 10 ? '...' : ''}`;
-    
+    document.getElementById('modalTitle').innerText = `Editar ${selectedTickets.size} Boletos`;
+    document.getElementById('modalSubtext').innerText = `Boletos: ${Array.from(selectedTickets).slice(0, 8).join(', ')}...`;
     document.getElementById('buyerName').value = '';
     document.getElementById('buyerPhone').value = '';
     document.getElementById('ticketStatus').value = 'paid';
+    document.getElementById('ticketModal').classList.remove('hidden');
+  }
 
-    const modal = new bootstrap.Modal(document.getElementById('ticketModal'));
-    modal.show();
+  function closeModal(id) {
+    document.getElementById(id).classList.add('hidden');
   }
 
   function saveTicketData() {
@@ -388,58 +260,57 @@
     const phone = document.getElementById('buyerPhone').value.trim();
     const status = document.getElementById('ticketStatus').value;
 
-    if (currentEditingMode === 'bulk') {
-      selectedTickets.forEach(id => {
-        tickets[id].status = status;
-        tickets[id].buyer = status === 'free' ? '' : name;
-        tickets[id].phone = status === 'free' ? '' : phone;
-      });
-      clearSelection();
-    }
+    selectedTickets.forEach(id => {
+      tickets[id].status = status;
+      tickets[id].buyer = status === 'free' ? '' : name;
+      tickets[id].phone = status === 'free' ? '' : phone;
+    });
 
+    clearSelection();
     saveToStorage();
-    bootstrap.Modal.getInstance(document.getElementById('ticketModal')).hide();
+    closeModal('ticketModal');
     renderGrid();
+  }
+
+  function openSorteoModal() {
+    document.getElementById('winnerResult').innerHTML = '';
+    document.getElementById('winningNumberInput').value = '';
+    document.getElementById('sorteoModal').classList.remove('hidden');
   }
 
   function evaluateWinner() {
     const winNum = document.getElementById('winningNumberInput').value.trim().padStart(4, '0');
-    let winnerTicket = null;
+    let winner = null;
 
     Object.values(tickets).forEach(t => {
-      if (t.numbers.includes(winNum)) {
-        winnerTicket = t;
-      }
+      if (t.numbers.includes(winNum)) winner = t;
     });
 
-    const resDiv = document.getElementById('winnerResult');
-    if (winnerTicket) {
-      resDiv.innerHTML = `
-        <div class="alert alert-success">
-          <h5>¡Número Encontrado!</h5>
-          <p class="mb-1">El número <strong>${winNum}</strong> pertenece al <strong>Boleto #${winnerTicket.id}</strong></p>
-          <p class="mb-1"><strong>Comprador:</strong> ${winnerTicket.buyer || 'Sin Nombre'}</p>
-          <p class="mb-1"><strong>Teléfono:</strong> ${winnerTicket.phone || 'N/A'}</p>
-          <p class="mb-0"><strong>Estado:</strong> ${winnerTicket.status === 'paid' ? 'PAGADO ✅' : 'APARTADO ⚠️'}</p>
+    const res = document.getElementById('winnerResult');
+    if (winner) {
+      res.innerHTML = `
+        <div style="background:#d1e7dd; color:#0f5132; padding:10px; border-radius:5px;">
+          <h4>¡Ganador Encontrado!</h4>
+          <p>El número <strong>${winNum}</strong> es del <strong>Boleto #${winner.id}</strong></p>
+          <p><strong>Comprador:</strong> ${winner.buyer || 'Sin asignar'}</p>
+          <p><strong>Teléfono:</strong> ${winner.phone || 'N/A'}</p>
+          <p><strong>Estado:</strong> ${winner.status.toUpperCase()}</p>
         </div>
       `;
     } else {
-      resDiv.innerHTML = `<div class="alert alert-danger">El número ingresado no pertenece a ningún boleto válido.</div>`;
+      res.innerHTML = `<div style="background:#f8d7da; color:#842029; padding:10px; border-radius:5px;">Número no encontrado.</div>`;
     }
   }
 
   function resetData() {
-    if (confirm('¿Estás seguro de que deseas reiniciar todos los boletos a disponibles?')) {
-      localStorage.removeItem('rifa_1250_data');
+    if (confirm('¿Deseas reiniciar todos los datos de la rifa?')) {
+      localStorage.removeItem('rifa_1250_data_v2');
       selectedTickets.clear();
-      initData();
+      forceGenerate();
     }
   }
 
-  document.getElementById('searchInput').addEventListener('input', renderGrid);
-
-  // Iniciar al cargar
-  initData();
+  window.onload = initData;
 </script>
 </body>
 </html>
